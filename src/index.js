@@ -4,3 +4,4 @@ import server from "#configs/server";
 server.listen(env.PORT, () => {
   console.log(`Server started on ${env.PORT}`);
 });
+    
