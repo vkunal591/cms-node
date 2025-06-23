@@ -1,12 +1,13 @@
 import User from "#models/user";
 import Service from "#services/base";
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
 import httpStatus from "#utils/httpStatus";
+import { createAccessOrRefreshToken } from "#utils/jwt";
 
 class UserService extends Service {
   static Model = User;
 
+  // 🚀 Register New User
   static async register(data) {
     const {
       name,
@@ -31,6 +32,8 @@ class UserService extends Service {
       notificationSettings,
       panelSettings,
     } = data;
+
+    // ⚠️ Check if user already exists
     const existingUser = await this.Model.findOne({
       $or: [{ mobileNo }, { email }, { empId }],
     });
@@ -41,10 +44,12 @@ class UserService extends Service {
         message: "User already exists",
       };
     }
-    
+
+    // 🔐 Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    
+
+    // 📦 Create new user
     const user = new this.Model({
       empId,
       name,
@@ -68,28 +73,32 @@ class UserService extends Service {
       notificationSettings,
       panelSettings,
     });
-    
+
     await user.save();
-    console.log(user)
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    // 🔑 Generate tokens
+    const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
 
+    // 📤 Clean user data
     const userData = user.toObject();
     delete userData.password;
+    userData.role = await user.populate({
+      path: "role",
+      populate: { path: "permissions tabs" },
+    });
 
     return {
-      token,
+      accessToken,
+      refreshToken,
       user: userData,
     };
   }
 
+  // 🔐 Login Existing User
   static async login(data) {
     const { mobileNo, email, empId, password } = data;
 
+    // 🧍‍♂️ Find user by credentials
     const user = await this.Model.findOne({
       $or: [{ mobileNo }, { email }, { empId }],
     });
@@ -101,17 +110,20 @@ class UserService extends Service {
       };
     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
+    // 🔑 Generate tokens
+    const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
 
+    // 📤 Clean user data
     const userData = user.toObject();
     delete userData.password;
+    userData.role = await user.populate({
+      path: "role",
+      populate: { path: "permissions tabs" },
+    });
 
     return {
-      token,
+      accessToken,
+      refreshToken,
       user: userData,
     };
   }

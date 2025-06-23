@@ -1,75 +1,54 @@
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import env from "#configs/env";
 import BaseSchema from "#models/base";
-import { saveFile } from "#utils/uploadFile";
+import {
+  saveFile
+} from "#utils/uploadFile";
 
 const employeeSchema = new BaseSchema({
   empId: {
     type: String,
     unique: true,
-    required: true,
+    required: true
   },
-
   name: {
     type: String,
-    required: true,
+    required: true
   },
-
   email: {
     type: String,
     unique: true,
-    sparse: true,
+    sparse: true
   },
-
   mobileNo: {
     type: String,
-    required: true,
+    required: true
   },
-
   password: {
     type: String,
-    required: true,
+    required: true
   },
-
   role: {
-    type: String,
-    enum: [
-      "intern",
-      "trainee",
-      "developer",
-      "staff",
-      "teamleader",
-      "hr",
-      "salesexecutive",
-      "salesmanager",
-      "mkexecutive",
-      "mkmanager",
-      "itexecutive",
-      "itmanager",
-      "finance",
-      "support",
-      "admin",
-      "superadmin",
-    ],
-    default: "staff",
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Role"
   },
 
   profilePic: {
     type: String,
-    file: true,
+    file: true
   },
 
   gender: {
     type: String,
-    enum: ["male", "female", "other"],
+    enum: ["male", "female", "other"]
   },
-
   dob: {
-    type: Date,
+    type: Date
   },
-
   joinDate: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
 
   address: {
@@ -81,39 +60,33 @@ const employeeSchema = new BaseSchema({
     pincode: String,
   },
 
-  education: [
-    {
-      degree: String,
-      institution: String,
-      year: Number,
-      grade: String,
-    },
-  ],
+  education: [{
+    degree: String,
+    institution: String,
+    year: Number,
+    grade: String,
+  }],
 
-  previousCompanies: [
-    {
-      companyName: String,
-      position: String,
-      durationFrom: Date,
-      durationTo: Date,
-      reasonForLeaving: String,
-    },
-  ],
+  previousCompanies: [{
+    companyName: String,
+    position: String,
+    durationFrom: Date,
+    durationTo: Date,
+    reasonForLeaving: String,
+  }],
 
-  documents: [
-    {
-      name: String,
-      fileUrl: {
-        type: String,
-        file: true,
-      },
+  documents: [{
+    name: String,
+    fileUrl: {
       type: String,
-      uploadedAt: {
-        type: Date,
-        default: Date.now,
-      },
+      file: true
     },
-  ],
+    type: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    },
+  }],
 
   legalDetails: {
     aadharNo: String,
@@ -131,15 +104,15 @@ const employeeSchema = new BaseSchema({
   notificationSettings: {
     emailNotifications: {
       type: Boolean,
-      default: true,
+      default: true
     },
     smsNotifications: {
       type: Boolean,
-      default: false,
+      default: false
     },
     pushNotifications: {
       type: Boolean,
-      default: true,
+      default: true
     },
   },
 
@@ -147,81 +120,92 @@ const employeeSchema = new BaseSchema({
     theme: {
       type: String,
       enum: ["light", "dark", "system"],
-      default: "light",
+      default: "light"
     },
     language: {
       type: String,
-      default: "en",
+      default: "en"
     },
     layout: {
       type: String,
       enum: ["compact", "comfortable"],
-      default: "comfortable",
+      default: "comfortable"
     },
   },
 
   isActive: {
     type: Boolean,
-    default: true,
+    default: true
   },
   status: {
     type: String,
     enum: ["active", "on-leave", "terminated", "retired"],
-    default: "active",
+    default: "active"
   },
 
   // 🔗 References
   company: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Company",
+    ref: "Company"
   },
-
   department: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Department",
+    ref: "Department"
   },
-
   branch: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "Branch",
+    ref: "Branch"
   },
+  projects: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Project"
+  }],
+  tasks: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Task"
+  }],
+  attendanceRecords: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Attendance"
+  }],
+  leaveRequests: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Leave"
+  }],
+  notifications: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Notification"
+  }],
+  refreshToken: {
+    type: String
+  }
 
-  projects: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Project",
-    },
-  ],
-
-  tasks: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Task",
-    },
-  ],
-
-  attendanceRecords: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Attendance",
-    },
-  ],
-
-  leaveRequests: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Leave",
-    },
-  ],
-
-  notifications: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Notification",
-    },
-  ],
 });
 
+// 🔐 JWT Method for Access Token
+employeeSchema.methods.generateAccessToken = function () {
+  return jwt.sign({
+      id: this._id,
+      role: this.role
+    },
+    env.JWT_SECRET, {
+      expiresIn: env.JWT_ACCESS_EXPIRES || "15m"
+    }
+  );
+};
+
+// 🔐 JWT Method for Refresh Token
+employeeSchema.methods.generateRefreshToken = function () {
+  return jwt.sign({
+      id: this._id
+    },
+    env.JWT_SECRET, {
+      expiresIn: env.JWT_REFRESH_EXPIRES || "7d"
+    }
+  );
+};
+
+// 📦 File Upload Hook
 employeeSchema.pre("save", saveFile);
 
 export default mongoose.model("Employee", employeeSchema);
