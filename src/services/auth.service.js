@@ -2,7 +2,9 @@ import User from "#models/user";
 import Service from "#services/base";
 import bcrypt from "bcryptjs";
 import httpStatus from "#utils/httpStatus";
-import { createAccessOrRefreshToken } from "#utils/jwt";
+import {
+  createAccessOrRefreshToken
+} from "#utils/jwt";
 
 class UserService extends Service {
   static Model = User;
@@ -35,7 +37,13 @@ class UserService extends Service {
 
     // ⚠️ Check if user already exists
     const existingUser = await this.Model.findOne({
-      $or: [{ mobileNo }, { email }, { empId }],
+      $or: [{
+        mobileNo
+      }, {
+        email
+      }, {
+        empId
+      }],
     });
 
     if (existingUser) {
@@ -77,14 +85,19 @@ class UserService extends Service {
     await user.save();
 
     // 🔑 Generate tokens
-    const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
+    const {
+      accessToken,
+      refreshToken
+    } = await createAccessOrRefreshToken(user._id);
 
     // 📤 Clean user data
     const userData = user.toObject();
     delete userData.password;
     userData.role = await user.populate({
       path: "role",
-      populate: { path: "permissions tabs" },
+      populate: {
+        path: "permissions tabs"
+      },
     });
 
     return {
@@ -95,38 +108,50 @@ class UserService extends Service {
   }
 
   // 🔐 Login Existing User
-  static async login(data) {
-    const { mobileNo, email, empId, password } = data;
+static async login(data) {
+  const { mobileNo, email, empId, password } = data;
 
-    // 🧍‍♂️ Find user by credentials
-    const user = await this.Model.findOne({
-      $or: [{ mobileNo }, { email }, { empId }],
-    });
+  // 🧍‍♂️ Find user by credentials
+  const user = await this.Model.findOne({
+    $or: [{ mobileNo }, { email }, { empId }],
+  });
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return {
-        httpStatus: httpStatus.UNAUTHORIZED,
-        message: "Invalid credentials",
-      };
-    }
-
-    // 🔑 Generate tokens
-    const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
-
-    // 📤 Clean user data
-    const userData = user.toObject();
-    delete userData.password;
-    userData.role = await user.populate({
-      path: "role",
-      populate: { path: "permissions tabs" },
-    });
-
+  console.log(email, password, !!user);
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return {
-      accessToken,
-      refreshToken,
-      user: userData,
+      httpStatus: httpStatus.UNAUTHORIZED,
+      message: "Invalid credentials",
     };
   }
+
+  // 🔑 Generate tokens
+  const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
+
+  // 🌐 Populate role → access → tab + permissions
+  await user.populate({
+    path: "role",
+    populate: {
+      path: "access",
+      populate: [
+        { path: "tab" },
+        { path: "permissions" }
+      ]
+    }
+  });
+
+  // 📤 Prepare user data AFTER population
+  const userData = user.toObject();
+  delete userData.password;
+
+  return {
+    httpStatus: httpStatus.OK,
+    message: "Login successful",
+    accessToken,
+    refreshToken,
+    user: userData,
+  };
+}
+
 }
 
 export default UserService;

@@ -8,7 +8,9 @@ import {
   deleteData
 } from "#controllers/role";
 import {
-  authentication
+  authentication,
+  authorization,
+  checkPermission
 } from "#middlewares/auth";
 import {
   permit
@@ -18,9 +20,9 @@ const router = Router();
 
 router
   .route("/:id?")
-  .get(get, permit("read", "/role"))
-  .post( create)
+  .get(authentication, authorization("Super Admin"), checkPermission("create", "/permission"), get)
+  .post(create)
   .put(authentication, permit("update", "/role"), update)
-  .delete(authentication,permit("delete", "/role"), deleteData);
+  .delete(authentication, permit("delete", "/role"), deleteData);
 
 export default router;

@@ -189,7 +189,7 @@ employeeSchema.methods.generateAccessToken = function () {
       role: this.role
     },
     env.JWT_SECRET, {
-      expiresIn: env.JWT_ACCESS_EXPIRES || "15m"
+      expiresIn:  "15m"
     }
   );
 };
@@ -200,7 +200,7 @@ employeeSchema.methods.generateRefreshToken = function () {
       id: this._id
     },
     env.JWT_SECRET, {
-      expiresIn: env.JWT_REFRESH_EXPIRES || "7d"
+      expiresIn: "7d"
     }
   );
 };
