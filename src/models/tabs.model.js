@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 import BaseSchema from "#models/base";
 
-
-
 const tabsSchema = new BaseSchema({
   name: {
     type: String,
@@ -12,11 +10,23 @@ const tabsSchema = new BaseSchema({
     type: String,
     required: true,
   },
-  permissions: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Permission"
-  }],
+  route: {
+    type: String,
+    required: true
+  },
 
+  subtabs: [{
+    name: {
+      type: String,
+    },
+    icon: {
+      type: String,
+    },
+    route: {
+      type: String,
+      required: true
+    },
+  }, ],
 });
 
 export default mongoose.model("Tabs", tabsSchema);

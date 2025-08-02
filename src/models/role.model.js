@@ -10,8 +10,18 @@ const roleSchema = new BaseSchema({
 
   },
   access: [{
-    tab: { type: mongoose.Schema.Types.ObjectId, ref: "Tabs", required: true },
-    permissions: [{ type: mongoose.Schema.Types.ObjectId, ref: "Permission" }]
+    _id: false,
+    tab: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tabs",
+      required: true
+
+    },
+    permissions: [{
+      type: [String],
+      enum: ["read", "create", "update", "delete"],
+      required: true
+    }, ],
   }]
 
 

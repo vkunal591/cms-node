@@ -96,8 +96,9 @@ class UserService extends Service {
     userData.role = await user.populate({
       path: "role",
       populate: {
-        path: "permissions tabs"
-      },
+        path: "access.tab", // populate each `tab` inside `access`
+        model: "Tabs"
+      }
     });
 
     return {
@@ -111,12 +112,15 @@ class UserService extends Service {
 static async login(data) {
   const { mobileNo, email, empId, password } = data;
 
-  // 🧍‍♂️ Find user by credentials
+  // 🧍‍♂️ Find user by any identifier
   const user = await this.Model.findOne({
-    $or: [{ mobileNo }, { email }, { empId }],
+    $or: [
+      { mobileNo },
+      { email },
+      { empId }
+    ]
   });
 
-  console.log(email, password, !!user);
   if (!user || !(await bcrypt.compare(password, user.password))) {
     return {
       httpStatus: httpStatus.UNAUTHORIZED,
@@ -127,19 +131,16 @@ static async login(data) {
   // 🔑 Generate tokens
   const { accessToken, refreshToken } = await createAccessOrRefreshToken(user._id);
 
-  // 🌐 Populate role → access → tab + permissions
+  // 🌐 Populate role -> access.tab (permissions are enum strings and don't need populate)
   await user.populate({
     path: "role",
     populate: {
-      path: "access",
-      populate: [
-        { path: "tab" },
-        { path: "permissions" }
-      ]
+      path: "access.tab",
+      model: "Tabs"
     }
   });
 
-  // 📤 Prepare user data AFTER population
+  // 📤 Prepare user object without password
   const userData = user.toObject();
   delete userData.password;
 

@@ -11,27 +11,33 @@ var _base = _interopRequireDefault(require("#models/base"));
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { "default": obj }; }
 
-var roleSchema = new _base["default"]({
+var tabsSchema = new _base["default"]({
   name: {
     type: String,
-    required: true,
-    unique: true
+    required: true
   },
-  access: [{
-    _id: false,
-    tab: {
-      type: _mongoose["default"].Schema.Types.ObjectId,
-      ref: "Tabs",
-      required: true
+  icon: {
+    type: String,
+    required: true
+  },
+  route: {
+    type: String,
+    required: true
+  },
+  subtabs: [{
+    name: {
+      type: String
     },
-    permissions: [{
-      type: [String],
-      "enum": ["read", "create", "update", "delete"],
+    icon: {
+      type: String
+    },
+    route: {
+      type: String,
       required: true
-    }]
+    }
   }]
 });
 
-var _default = _mongoose["default"].model("Role", roleSchema);
+var _default = _mongoose["default"].model("Tabs", tabsSchema);
 
 exports["default"] = _default;

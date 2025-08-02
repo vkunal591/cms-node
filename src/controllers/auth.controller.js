@@ -23,9 +23,9 @@ function decodeToken(token) {
 
 // 👤 GET single user from token
 export const getUser = asyncHandler(async function (req, res, _next) {
+  
   const token = req.headers.authorization?.split(" ")[1];
   if (!token) throw new Error("No token provided");
-
   const decoded = decodeToken(token);
   const user = await UserService.get(decoded.id);
   const {
@@ -74,7 +74,8 @@ export const login = asyncHandler(async function (req, res, _next) {
   const status = authData.httpStatus || httpStatus.OK;
 
   sendResponse(status, res, {
-    token: authData.token,
+    refreshToken: authData.refreshToken,
+    accessToken: authData.accessToken,
     user: authData.user,
   }, message);
 });

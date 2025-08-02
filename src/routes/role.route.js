@@ -20,7 +20,7 @@ const router = Router();
 
 router
   .route("/:id?")
-  .get(authentication, authorization("Super Admin"), checkPermission("create", "/permission"), get)
+  .get(get)
   .post(create)
   .put(authentication, permit("update", "/role"), update)
   .delete(authentication, permit("delete", "/role"), deleteData);

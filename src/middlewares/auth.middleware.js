@@ -119,7 +119,6 @@ export const ADMIN = "admin";
  */
 export const authentication = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
-
   if (!authHeader?.startsWith("Bearer ")) {
     return res.status(httpStatus.UNAUTHORIZED).json({
       status: false,
@@ -138,15 +137,14 @@ export const authentication = asyncHandler(async (req, res, next) => {
       message: "Invalid token",
     });
   }
-
   const user = await Employee.findById(decoded.id)
     .select("-password")
     .populate({
       path: "role",
-      populate: [
-        { path: "permissions" },
-        { path: "tabs", populate: { path: "permissions" } }
-      ],
+      populate: {
+        path: "access.tab",
+        model: "Tabs"
+      }
     });
 
   if (!user || !user.isActive) {
